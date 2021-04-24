@@ -1,0 +1,55 @@
+blueprint:
+  name: 'Tasmota: Error Binary Sensor for TuyaMCU'
+  description: | 
+    Set up an error sensor for a Tasmota Tuya Device. Created for [GD-30W Aroma Diffuser](https://templates.blakadder.com/GD-30W.html).
+
+    Requires an active rule in Tasmota. To configure run this command (change `id12` if your devices uses another dpId):
+    <details>
+
+    Backlog Rule2 on tuyareceived#dptype5id12 do publish stat/%topic%/error %value% endon on tuyareceived#dptype4id103==1 do publish stat/%topic%/fanmode high endon; Rule2 1
+
+    </details>
+
+  domain: automation
+  input:
+    name:
+      name: Sensor name
+      description: Name of the sensor to be created. 
+      selector: 
+        text:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI."
+      selector: 
+        text:
+    mac_address:
+      name: Tasmota MAC Address
+      description: "Found in Information tab of the webUI."
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  name: !input name
+  mac_address: !input mac_address
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload: >-
+     {{ '{"name":"' ~ name ~ '","state_topic":"stat/' ~ topic ~ '/error","value_template":"{{ \'ON\' if value != \'0X00\' else \'OFF\' }}","device_class":"problem","avty_t":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","uniq_id":"' ~ macaddr ~ '_error","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  service: mqtt.publish
+  data:
+    topic: "homeassistant/binary_sensor/{{ macaddr }}_error/config"
+    retain: true
+    payload: "{{ payload }}"
