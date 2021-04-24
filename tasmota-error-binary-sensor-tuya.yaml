@@ -48,8 +48,17 @@ trigger:
     payload: "Online"
 
 action:
-  service: mqtt.publish
-  data:
-    topic: "homeassistant/binary_sensor/{{ macaddr }}/error/config"
-    retain: true
-    payload: "{{ payload }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/binary_sensor/{{ macaddr }}/error/config"
+      retain: true
+      payload: "{{ payload }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""
