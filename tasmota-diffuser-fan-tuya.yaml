@@ -8,7 +8,7 @@ blueprint:
     Requires an active rule in Tasmota. To configure run this command (change `id103` if your device uses another dpId):
     <details>
 
-    Backlog Rule2 on tuyareceived#dptype4id103==1 do publish stat/%topic%/fanmode high endon on tuyareceived#dptype4id103==0 do publish stat/%topic%/fanmode; Rule2 1
+    Backlog Rule2 on tuyareceived#dptype4id103==1 do publish stat/%topic%/fanmode high endon on tuyareceived#dptype4id103==0 do publish stat/%topic%/fanmode endon; Rule2 1
 
     </details>
 
