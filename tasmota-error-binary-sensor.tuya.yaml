@@ -3,10 +3,10 @@ blueprint:
   description: | 
     Set up an error sensor for a Tasmota Tuya Device. Created for [GD-30W Aroma Diffuser](https://templates.blakadder.com/GD-30W.html).
 
-    Requires an active rule in Tasmota. To configure run this command (change `id12` if your devices uses another dpId):
+    Requires an active rule in Tasmota. To add the rule run this command (change `id12` if your devices uses another dpId):
     <details>
 
-    Backlog Rule2 on tuyareceived#dptype5id12 do publish stat/%topic%/error %value% endon on tuyareceived#dptype4id103==1 do publish stat/%topic%/fanmode high endon; Rule2 1
+    Backlog Rule2 + on tuyareceived#dptype5id12 do publish stat/%topic%/error %value% endon; Rule2 1
 
     </details>
 
