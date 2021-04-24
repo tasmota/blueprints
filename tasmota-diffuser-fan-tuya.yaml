@@ -1,0 +1,57 @@
+blueprint:
+  name: 'Tasmota: Tuya Diffuser as Fan'
+  description: | 
+    Set up an Tasmota Tuya aroma diffuser as fan entity. Created for [GD-30W Aroma Diffuser](https://templates.blakadder.com/GD-30W.html).
+    
+    Diffuser should be on `Power1` and diffuser modes on `TuyaEnum1`.
+
+    Requires an active rule in Tasmota. To configure run this command (change `id103` if your device uses another dpId):
+    <details>
+
+    Backlog Rule2 on tuyareceived#dptype4id103==1 do publish stat/%topic%/fanmode high endon on tuyareceived#dptype4id103==0 do publish stat/%topic%/fanmode; Rule2 1
+
+    </details>
+
+  domain: automation
+  input:
+    name:
+      name: Device Name in HA
+      description: Name of the device which is created. 
+      selector: 
+        text:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI."
+      selector: 
+        text:
+    mac_address:
+      name: Tasmota MAC Address
+      description: "Found in Information tab of the webUI."
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  name: !input name
+  mac_address: !input mac_address
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload: >-
+     {{ '{"name":"' ~ name ~ '","state_topic":"stat/' ~ topic ~ '/RESULT","state_value_template":"{% if value_json.POWER1 is defined %}{{ value_json.POWER1 }}{% endif%}","command_topic":"cmnd/' ~ topic ~ '/POWER1","preset_modes":["high","low"],"preset_mode_state_topic":"stat/' ~ topic ~ '%/fanmode","preset_mode_command_topic":"cmnd/' ~ topic ~ '/tuyaenum1","preset_mode_command_template":"{{ 1 if value == \"high\" else 0 }}","availability_topic":"tele/' ~ topic ~ '/LWT","payload_available":"Online","payload_not_available":"Offline","uniq_id":"' ~ macaddr ~ '_fan","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  service: mqtt.publish
+  data:
+    topic: "homeassistant/fan/{{ macaddr }}/fan/config"
+    retain: true
+    payload: "{{ payload }}"
