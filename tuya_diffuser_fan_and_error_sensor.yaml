@@ -1,0 +1,71 @@
+blueprint:
+  name: 'Tasmota Discovery: Aroma Diffuser'
+  description: | 
+    Set up a Tasmota TuyaMCU aroma diffuser as a fan entity and binary sensor for error. 
+    
+    Diffuser fan should be on `Power1` and diffuser modes on `TuyaEnum1`.
+
+    Requires some rules configured in Tasmota. See your device template page for rules:
+    
+      - [GD-30W Aroma Diffuser](https://templates.blakadder.com/GD-30W.html)
+      - [Wood Grain 550ML Aroma Diffuser](https://templates.blakadder.com/oil_diffuser_550ml.html)
+
+  domain: automation
+  input:
+    name:
+      name: Sensor name
+      description: Name of the sensor to be created. 
+      selector: 
+        text:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI."
+      selector: 
+        text:
+    mac_address:
+      name: Tasmota MAC Address
+      description: "Found in Information tab of the webUI."
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  name: !input name
+  mac_address: !input mac_address
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload_error: >-
+     {{ '{"name":"' ~ name ~ ' Error","state_topic":"stat/' ~ topic ~ '/error","value_template":"{{ \'ON\' if value != \'0X00\' else \'OFF\' }}","device_class":"problem","avty_t":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","uniq_id":"' ~ macaddr ~ '_error","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_fan: >-
+     {{ '{"name":"' ~ name ~ '","state_topic":"stat/' ~ topic ~ '/RESULT","state_value_template":"{% if value_json.POWER1 is defined %}{{ value_json.POWER1 }}{% endif %}","command_topic":"cmnd/' ~ topic ~ '/POWER1","preset_modes":["high","low"],"preset_mode_state_topic":"stat/' ~ topic ~ '/fanmode","preset_mode_command_topic":"cmnd/' ~ topic ~ '/tuyaenum1","preset_mode_command_template":"{{ 1 if value == \'high\' else 0 }}","availability_topic":"tele/' ~ topic ~ '/LWT","payload_available":"Online","payload_not_available":"Offline","uniq_id":"' ~ macaddr ~ '_fan","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/binary_sensor/{{ macaddr }}/error/config"
+      retain: true
+      payload: "{{ payload_error }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/fan/{{ macaddr }}/fan/config"
+      retain: true
+      payload: "{{ payload_fan }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""
