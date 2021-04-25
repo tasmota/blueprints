@@ -1,16 +1,15 @@
 blueprint:
   name: 'Tasmota: Tuya Diffuser as Fan'
   description: | 
-    Set up an Tasmota Tuya aroma diffuser as fan entity. Created for [GD-30W Aroma Diffuser](https://templates.blakadder.com/GD-30W.html).
+    Set up an Tasmota Tuya aroma diffuser as fan entity.
     
-    Diffuser should be on `Power1` and diffuser modes on `TuyaEnum1`.
+    Diffuser fan should be on `Power1` and diffuser modes on `TuyaEnum1`.
 
-    Requires an active rule in Tasmota. To configure run this command (change `id103` if your device uses another dpId):
-    <details>
-
-    Backlog Rule2 on tuyareceived#dptype4id103==1 do publish stat/%topic%/fanmode high endon on tuyareceived#dptype4id103==0 do publish stat/%topic%/fanmode endon; Rule2 1
-
-    </details>
+    Requires some rules configured in Tasmota. See the device template page for rules:
+    
+      - [GD-30W Aroma Diffuser](https://templates.blakadder.com/GD-30W.html)
+      - [Wood Grain 550ML Aroma Diffuser](https://templates.blakadder.com/oil_diffuser_550ml.html)
+      
 
   domain: automation
   input:
