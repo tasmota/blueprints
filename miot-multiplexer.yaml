@@ -1,0 +1,38 @@
+blueprint:
+  name: 'Tasmota: Smartmi Multiplexer'
+  description: | 
+    Take the MiOT combined properties_changed payload from Tasmota and convert it into a proper JSON array: `{"s<siid>p<piid>":"value",...}`
+
+    Requires some rules configured in Tasmota. See your device template page for rules:
+    
+      - [SmartMi Fan Heater (ZNNFJ07ZM)](https://templates.blakadder.com/smartmi_ZNNFJ07ZM.html)
+
+  domain: automation
+  input:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI."
+      selector: 
+        text:
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  payload: >-
+      {% set stripped = trigger.payload | replace("PROPERTIES_CHANGED ","") | replace(" R","") | lower %} { {%- for row in stripped.split(" ")|batch(3) -%}"s{{ row[0] }}p{{ row[1] }}":"{{ row[2] }}"{{ "," if not loop.last else "" }}{% endfor %}}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: mqtt
+    topic: "{{ topic }}/changed_properties"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "{{ topic }}/properties"
+      payload:  "{{ payload }}"
+        
