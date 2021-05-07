@@ -1,0 +1,150 @@
+blueprint:
+  name: 'Tasmota Discovery: TopGreener Smart Scene Controller (TGWFSC8-W)'
+  description: |
+    Requires some rules configured in Tasmota. See your device template page for rules:
+    
+      - [TopGreener Smart Scene Controller (TGWFSC8-W)](https://templates.blakadder.com/topgreener_TGWFSC8-W)
+
+  domain: automation
+  input:
+    name:
+      name: Device name
+      description: Name of the device to be used in sensor name creation. 
+      selector: 
+        text:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI."
+      selector: 
+        text:
+    mac_address:
+      name: Tasmota MAC Address
+      description: "Found in Information tab of the webUI."
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  name: !input name
+  mac_address: !input mac_address
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload_btn1short: >-
+      {"automation_type":"trigger","subtype":"button_1","type":"button_short_press","topic":"' ~ topic ~ '/btn1","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn1double: >-
+      {"automation_type":"trigger","subtype":"button_1","type":"button_double_press","topic":"' ~ topic ~ '/btn1","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn2short: >-
+      {"automation_type":"trigger","subtype":"button_2","type":"button_short_press","topic":"' ~ topic ~ '/btn2","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn2double: >-
+      {"automation_type":"trigger","subtype":"button_2","type":"button_double_press","topic":"' ~ topic ~ '/btn2","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn3short: >-
+      {"automation_type":"trigger","subtype":"button_3","type":"button_short_press","topic":"' ~ topic ~ '/btn3","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn3double: >-
+      {"automation_type":"trigger","subtype":"button_3","type":"button_double_press","topic":"' ~ topic ~ '/btn3","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn4short: >-
+      {"automation_type":"trigger","subtype":"button_4","type":"button_short_press","topic":"' ~ topic ~ '/btn4","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn4double: >-
+      {"automation_type":"trigger","subtype":"button_4","type":"button_double_press","topic":"' ~ topic ~ '/btn4","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn5short: >-
+      {"automation_type":"trigger","subtype":"button_5","type":"button_short_press","topic":"' ~ topic ~ '/btn5","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn5double: >-
+      {"automation_type":"trigger","subtype":"button_5","type":"button_double_press","topic":"' ~ topic ~ '/btn5","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn6short: >-
+      {"automation_type":"trigger","subtype":"button_6","type":"button_short_press","topic":"' ~ topic ~ '/btn6","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn6double: >-
+      {"automation_type":"trigger","subtype":"button_6","type":"button_double_press","topic":"' ~ topic ~ '/btn6","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn7short: >-
+      {"automation_type":"trigger","subtype":"button_7","type":"button_short_press","topic":"' ~ topic ~ '/btn7","device":{"connections":[["mac","%macaddr%"]]}}
+  payload_btn7double: >-
+      {"automation_type":"trigger","subtype":"button_7","type":"button_double_press","topic":"' ~ topic ~ '/btn7","device":{"connections":[["mac","%macaddr%"]]}}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn1short/config"
+      retain: true
+      payload: "{{ payload_btn1short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn1double/config"
+      retain: true
+      payload: "{{ payload_btn1double }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn2short/config"
+      retain: true
+      payload: "{{ payload_btn2short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn2double/config"
+      retain: true
+      payload: "{{ payload_btn2double }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn3short/config"
+      retain: true
+      payload: "{{ payload_btn3short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn3double/config"
+      retain: true
+      payload: "{{ payload_btn3double }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn4short/config"
+      retain: true
+      payload: "{{ payload_btn4short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn4double/config"
+      retain: true
+      payload: "{{ payload_btn4double }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn5short/config"
+      retain: true
+      payload: "{{ payload_btn5short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn5double/config"
+      retain: true
+      payload: "{{ payload_btn5double }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn6short/config"
+      retain: true
+      payload: "{{ payload_btn6short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn6double/config"
+      retain: true
+      payload: "{{ payload_btn6double }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn7short/config"
+      retain: true
+      payload: "{{ payload_btn7short }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/btn7double/config"
+      retain: true
+      payload: "{{ payload_btn7double }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend0"
+      payload: ""
