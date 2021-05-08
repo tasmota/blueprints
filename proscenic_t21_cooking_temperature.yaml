@@ -1,0 +1,42 @@
+blueprint:
+  name: 'Tasmota: Proscenic T21 Set Cooking Temperature when using °F'
+  description: |
+    Sets cooking Temperature when input_number is changed
+
+    Create a Number Helper before proceeding!
+    <details>
+    ![Number Helper](https://raw.githubusercontent.com/blakadder/blog/master/assets/images/proscenic/input_number_fahrenheit.jpg)
+    </details>
+
+    Used for [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html)
+
+  domain: automation
+
+  input:
+    inputnumber:
+      name: Number Helper
+      selector:
+        entity:
+          domain: input_number
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI. Beware, it is case sensitive!"
+      selector: 
+        text:
+
+mode: single
+max_exceeded: silent
+
+variables:
+  inputnumber: !input inputnumber
+  topic: !input topic
+
+trigger:
+  - platform: state
+    entity_id: !input inputnumber
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: cmnd/{{ topic }}/TuyaSend2
+      payload: '103,{{ trigger.to_state.state }}'

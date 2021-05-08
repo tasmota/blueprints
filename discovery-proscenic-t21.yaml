@@ -1,0 +1,96 @@
+blueprint:
+  name: 'Tasmota: Proscenic T21 Discover Entities'
+  description: |
+    Set up a Tasmota Proscenic T21 air fryer in Home Assistant.
+    
+    After this automation create a [cookbook input helper]() and [cooking temperature](input number helper) then add the [automation blueprint]() to keep it all in sync.
+
+    Requires rules configured in Tasmota. See device template page for rules: [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html)
+
+  domain: automation
+  input:
+    name:
+      name: Device name
+      description: Name of the device to be used in sensor name creation. 
+      selector: 
+        text:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI."
+      selector: 
+        text:
+    mac_address:
+      name: Tasmota MAC Address
+      description: "Found in Information tab of the webUI."
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  name: !input name
+  mac_address: !input mac_address
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload_mode: >-
+     {{ '{"name":"Cooking Mode","state_topic":"' ~ topic ~ '/mode","value_template":"{%set m=value|int%}{%if m==0%}Ready{%elif m==1%}Delayed Cook{%elif m==2%}Cooking{%elif m==3%}Keep Warm{%elif m==4%}Off{%elif m==5%}Cooking Complete{%else%}Unknown{%endif%}","icon":"mdi:pot-mix","avty_t":"tele/' ~ topic ~'/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_cookingmode","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_cookbook: >-
+     {{ '{"name":"Cookbook","state_topic":"' ~ topic ~ '/cookbook","value_template":"{%set m=value|int%}{%if m==0%}Default{%elif m==1%}Fries{%elif m==2%}Shrimp{%elif m==3%}Pizza{%elif m==4%}Chicken{%elif m==5%}Fish{%elif m==6%}Steak{%elif m==7%}Cake{%elif m==8%}Bacon{%elif m==9%}Preheat{%elif m==10%}Custom{%else%}Unknown{%endif%}","icon":"mdi:chef-hat","availability_topic":"tele/' ~ topic ~'/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_cookbook","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_cooktime: >-
+     {{ '{"name":"Cooking Time Set","state_topic":"' ~ topic ~ '/cooktime","command_topic":"cmnd/' ~ topic ~ '/var7","icon":"mdi:av-timer","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_cooktime","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_warmtime: >-
+     {{ '{"name":"Keep Warm Time Set","state_topic":"' ~ topic ~ '/warmtime","command_topic":"cmnd/' ~ topic ~ '/var5","icon":"mdi:pot-steam","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_warmtime","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_delayedtime: >-
+     {{ '{"name":"Delayed Cook Time Set","state_topic":"' ~ topic ~ '/delayedtime","command_topic":"cmnd/' ~ topic ~ '/var6","icon":"mdi:calendar-clock","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_delayedtime","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_cooktemp: >-
+     {{ '{"name":"Cooking Temperature Set","state_topic":"' ~ topic ~ '/cookingtemperature","command_topic":"' ~ topic ~ '/setcooktemp","icon":"mdi:thermometer-lines","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_cooktemp","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/mode/config"
+      retain: true
+      payload: "{{ payload_mode }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/cookbook/config"
+      retain: true
+      payload: "{{ payload_cookbook }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/cooktime/config"
+      retain: true
+      payload: "{{ payload_cooktime }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/warmtime/config"
+      retain: true
+      payload: "{{ payload_warmtime }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/delayedtime/config"
+      retain: true
+      payload: "{{ payload_delayedtime }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/cooktemp/config"
+      retain: true
+      payload: "{{ payload_cooktemp }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""

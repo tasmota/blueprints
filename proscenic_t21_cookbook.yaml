@@ -1,0 +1,77 @@
+blueprint:
+  name: 'Tasmota: Proscenic T21 Cookbook '
+  description: |
+    Changes cookbook selection when input_select is changed and updates the input_select if cookbook is changed externally
+
+    Create a Dropdown Helper before proceeding!
+
+    <details>
+    ![Dropdown Helper](https://raw.githubusercontent.com/blakadder/blog/master/assets/images/proscenic/input_select.jpg)
+    <details>
+
+    Used for [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html)
+
+  domain: automation
+
+  input:
+    inputselect:
+      name: Dropdown helper
+      selector:
+        entity:
+          domain: input_select
+    cookbook:
+      name: Cookbook sensor
+      selector:
+        entity:
+          integration: tasmota
+          domain: sensor
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI. Beware, it is case sensitive!"
+      selector: 
+        text:
+
+mode: single
+max_exceeded: silent
+
+variables:
+  inputselect: !input inputselect
+  cookbook: !input cookbook
+  topic: !input topic
+
+trigger:
+  - platform: state
+    entity_id: !input inputselect
+  - platform: state
+    entity_id: !input cookbook
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.entity_id == cookbook }}'
+        sequence:
+          - service: input_select.select_option
+            target:
+              entity_id: !input inputselect
+            data:
+              option: '{{ trigger.to_state.state }}'
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.entity_id == inputselect }}'
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: cmnd/{{ topic }}/TuyaSend4
+              payload_template: >-
+                3,{% if trigger.to_state.state == 'Default' %}0{% elif
+                trigger.to_state.state == 'Fries' %}1{% elif
+                trigger.to_state.state == 'Shrimp' %}2{% elif
+                trigger.to_state.state == 'Pizza' %}3{% elif
+                trigger.to_state.state == 'Chicken' %}4{% elif
+                trigger.to_state.state == 'Fish' %}5{% elif
+                trigger.to_state.state == 'Steak' %}6{% elif
+                trigger.to_state.state == 'Cake' %}7{% elif
+                trigger.to_state.state == 'Bacon' %}8{% elif
+                trigger.to_state.state == 'Preheat' %}9{% elif
+                trigger.to_state.state == 'Custom' %}10{%endif%}
