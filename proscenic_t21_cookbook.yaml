@@ -25,7 +25,7 @@ blueprint:
       name: Cookbook sensor
       selector:
         entity:
-          integration: tasmota
+          integration: mqtt
           domain: sensor
     topic:
       name: Tasmota MQTT Topic 

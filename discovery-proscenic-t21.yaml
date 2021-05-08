@@ -9,12 +9,12 @@ blueprint:
   input:
     topic:
       name: Tasmota MQTT Topic 
-      description: "Found in Information tab of the webUI."
+      description: "Found in Information tab of the webUI. Warning, it is case sensitive!"
       selector: 
         text:
     mac_address:
       name: Tasmota MAC Address
-      description: "Found in Information tab of the webUI."
+      description: "Found in Tasmota webUI Information tab."
 
 mode: single
 max_exceeded: silent
