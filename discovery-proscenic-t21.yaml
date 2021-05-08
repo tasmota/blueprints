@@ -1,19 +1,12 @@
 blueprint:
   name: 'Tasmota: Proscenic T21 Discover Entities'
   description: |
-    Set up a Tasmota Proscenic T21 air fryer in Home Assistant.
+    Set up a Tasmota Proscenic T21 air fryer in Home Assistant. Blog post with [instructions](https://blakadder.com/proscenic-in-home-assistant)
     
-    After this automation create a [cookbook input helper]() and [cooking temperature](input number helper) then add the [automation blueprint]() to keep it all in sync.
-
     Requires rules configured in Tasmota. See device template page for rules: [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html)
 
   domain: automation
   input:
-    name:
-      name: Device name
-      description: Name of the device to be used in sensor name creation. 
-      selector: 
-        text:
     topic:
       name: Tasmota MQTT Topic 
       description: "Found in Information tab of the webUI."
@@ -28,7 +21,6 @@ max_exceeded: silent
 
 variables:
   topic: !input topic
-  name: !input name
   mac_address: !input mac_address
   macaddr: '{{- mac_address.split(":") | join -}}'
   payload_mode: >-
