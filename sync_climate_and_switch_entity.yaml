@@ -1,7 +1,9 @@
 blueprint:
-  name: Sync climate with a toggle entity
+  name: Sync climate with a switch entity
   description: |
-      Sync states of  a climate entity but want to track the state of the climate entity (for example: a switch with a LED indicator)
+      Sync states of a climate entity and a switch.
+
+      Useful when you want to track the state of the climate entity on, for example, a switch with a LED indicator and control the heater from the same switch.
   domain: automation
   input:
     switch:
@@ -27,7 +29,7 @@ trigger:
 condition:
   - condition: template
     value_template: >-
-      {{ states(climate | replace("heat", "on") | replace("cool", "on")) !=
+      {{ states(climate | replace("idle", "on") | replace("heat", "on") | replace("cool", "on")) | replace("dry", "on")) !=
       states(switch) }}
 action:
   - choose:
