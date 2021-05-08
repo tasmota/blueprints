@@ -11,7 +11,7 @@ blueprint:
 
     </details>
 
-    Used for [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html)
+    Used for [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html). Blog post with [instructions](https://blakadder.com/proscenic-in-home-assistant).
 
   domain: automation
 
