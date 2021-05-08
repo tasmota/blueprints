@@ -1,0 +1,48 @@
+blueprint:
+  name: Sync climate with a toggle entity
+  description: |
+      Sync states of  a climate entity but want to track the state of the climate entity (for example: a switch with a LED indicator)
+  domain: automation
+  input:
+    switch:
+      name: Choose switch device
+      selector:
+        entity:
+          domain: switch
+    climate:
+      name: Choose climate device
+      selector:
+        entity:
+          domain: climate
+mode: single
+max_exceeded: silent
+variables:
+  climate: !input climate
+  switch: !input switch
+trigger:
+  - platform: state
+    entity_id: !input climate
+  - platform: state
+    entity_id: !input switch
+condition:
+  - condition: template
+    value_template: >-
+      {{ states(climate | replace("heat", "on") | replace("cool", "on")) !=
+      states(switch) }}
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.entity_id == climate }}'
+        sequence:
+          - service: >-
+              switch.turn_{{ "on" if trigger.to_state.state != "off" else "off" }}
+            target:
+              entity_id: !input switch
+      - conditions:
+          - condition: template
+            value_template: '{{ trigger.entity_id == switch }}'
+        sequence:
+          - service: 'climate.turn_{{ trigger.to_state.state }}'
+            target:
+              entity_id: !input climate
