@@ -29,7 +29,7 @@ trigger:
 condition:
   - condition: template
     value_template: >-
-      {{ states(climate | replace("idle", "on") | replace("heat", "on") | replace("cool", "on")) | replace("dry", "on")) !=
+      {{ states(climate | replace("idle", "on") | replace("heat", "on") | replace("cool", "on") | replace("dry", "on")) !=
       states(switch) }}
 action:
   - choose:
