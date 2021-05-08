@@ -1,7 +1,7 @@
 blueprint:
   name: 'Tasmota: Proscenic T21 Discover Entities'
   description: |
-    Set up a Tasmota Proscenic T21 air fryer in Home Assistant. Blog post with [instructions](https://blakadder.com/proscenic-in-home-assistant)
+    Set up a Tasmota Proscenic T21 air fryer in Home Assistant. Blog post with [instructions](https://blakadder.com/proscenic-in-home-assistant).
     
     Requires rules configured in Tasmota. See device template page for rules: [Proscenic T21 Air Fryer](https://templates.blakadder.com/proscenic_T21.html)
 
@@ -33,8 +33,6 @@ variables:
      {{ '{"name":"Keep Warm Time Set","state_topic":"' ~ topic ~ '/warmtime","command_topic":"cmnd/' ~ topic ~ '/var5","icon":"mdi:pot-steam","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_warmtime","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
   payload_delayedtime: >-
      {{ '{"name":"Delayed Cook Time Set","state_topic":"' ~ topic ~ '/delayedtime","command_topic":"cmnd/' ~ topic ~ '/var6","icon":"mdi:calendar-clock","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_delayedtime","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
-  payload_cooktemp: >-
-     {{ '{"name":"Cooking Temperature Set","state_topic":"' ~ topic ~ '/cookingtemperature","command_topic":"' ~ topic ~ '/setcooktemp","icon":"mdi:thermometer-lines","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_cooktemp","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
 
 trigger_variables:
   topic: !input topic
@@ -72,11 +70,6 @@ action:
       topic: "homeassistant/number/{{ macaddr }}/delayedtime/config"
       retain: true
       payload: "{{ payload_delayedtime }}"
-  - service: mqtt.publish
-    data:
-      topic: "homeassistant/number/{{ macaddr }}/cooktemp/config"
-      retain: true
-      payload: "{{ payload_cooktemp }}"
   - delay:
       hours: 0
       minutes: 0
