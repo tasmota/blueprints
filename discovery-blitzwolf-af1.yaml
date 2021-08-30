@@ -1,0 +1,67 @@
+blueprint:
+  name: 'Tasmota Discovery: Blitzwolf BW-AF1'
+  description: |
+    Set up a Blitzwolf BW-AF1 air fryer in Home Assistant. Blog post with [instructions](https://blakadder.com/bw-af1-in-home-assistant).
+    
+    Requires rules configured in Tasmota. See device template page for rules: [Blitzwolf BW-AF1 Air Fryer](https://templates.blakadder.com/blitzwolf_BW-AF1.html)
+
+  domain: automation
+  input:
+    topic:
+      name: Tasmota MQTT Topic 
+      description: "Found in Information tab of the webUI. Warning, it is case sensitive!"
+      selector: 
+        text:
+    mac_address:
+      name: Tasmota MAC Address
+      description: "Found in Tasmota webUI Information tab."
+
+mode: single
+max_exceeded: silent
+
+variables:
+  topic: !input topic
+  mac_address: !input mac_address
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload_cookbook: >-
+     {{ '{"name":"Set Cookbook","state_topic":"' ~ topic ~ '/cookbook","options":["Default","Custom","Fries","Frozen Fries","Nuggets","Chicken","Steak","Fish"],"value_template":"{%set m=value|int%}{%if m==0%}Default{%elif m==1%}Custom{%elif m==2%}Fries{%elif m==3%}Frozen Fries{%elif m==4%}Nuggets{%elif m==5%}Chicken{%elif m==6%}Steak{%elif m==7%}Fish{%else%}Unknown{%endif%}","command_topic":"cmnd/' ~ topic ~ '/event","icon":"mdi:chef-hat","availability_topic":"tele/' ~ topic ~'/LWT","pl_avail":"Online","pl_not_avail":"Offline","unique_id":"' ~ macaddr ~ '_cookbook","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_cooktime: >-
+     {{ '{"name":"Set Cooking Time","state_topic":"' ~ topic ~ '/cooktime","command_topic":"cmnd/' ~ topic ~ '/var5","icon":"mdi:av-timer","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","min":1,"max":60,"unique_id":"' ~ macaddr ~ '_cooktime","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+  payload_cooktemp: >-
+     {{ '{"name":"Set Cooking Temp","state_topic":"' ~ topic ~ '/cooktemp","command_topic":"cmnd/' ~ topic ~ '/var3","icon":"mdi:thermometer","availability_topic":"tele/' ~ topic ~ '/LWT","pl_avail":"Online","pl_not_avail":"Offline","min":40,"max":400,"unique_id":"' ~ macaddr ~ '_cooktemp","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/select/{{ macaddr }}/cookbook/config"
+      retain: true
+      payload: "{{ payload_cookbook }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/cooktime/config"
+      retain: true
+      payload: "{{ payload_cooktime }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/cooktemp/config"
+      retain: true
+      payload: "{{ payload_cooktemp }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""
