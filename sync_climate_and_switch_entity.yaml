@@ -1,5 +1,6 @@
 blueprint:
   name: Sync climate with a switch entity
+  source_url: https://raw.githubusercontent.com/tasmota/blueprints/main/sync_climate_and_switch_entity.yaml
   description: |
       Sync states of a climate entity and a switch.
 
