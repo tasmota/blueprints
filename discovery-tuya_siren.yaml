@@ -22,7 +22,7 @@ blueprint:
     mac_address:
       name: Tasmota MAC Address
       description: "Found in Information tab of the webUI."
-  source_url: https://raw.githubusercontent.com/tasmota/blueprints/main/discovery-tuya_siren.yaml
+  source_url: https://github.com/tasmota/blueprints/blob/main/discovery-tuya_siren.yaml
 mode: single
 max_exceeded: silent
 
