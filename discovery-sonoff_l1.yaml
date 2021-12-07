@@ -1,0 +1,77 @@
+blueprint:
+  name: "Tasmota Discovery: Sonoff L1 Music Mode"
+  description: "Set up music mode on a Sonoff L1 with\
+    \ sensor and selected sensitivity and speed.\n\nRequires some rules configured in Tasmota.\
+    \ See your device template page for rules:\n\n  - [Sonoff L1 LED Strip](https://templates.blakadder.com/sonoff_L1.html)\n"
+  domain: automation
+  input:
+    name:
+      name: Device name
+      description: Name of the device to be used in sensor name creation.
+      selector:
+        text: {}
+    topic:
+      name: Tasmota MQTT Topic
+      description: Found in Information tab of the webUI.
+      selector:
+        text: {}
+    mac_address:
+      name: Tasmota MAC Address
+      description: Found in Information tab of the webUI.
+  source_url: https://github.com/mihsu81/blueprints/blob/main/discovery-sonoff_l1.yaml
+mode: single
+max_exceeded: silent
+variables:
+  topic: !input "topic"
+  name: !input "name"
+  mac_address: !input "mac_address"
+  macaddr: '{{- mac_address.split(":") | join -}}'
+  payload_musicsync: '{{ ''{"name":"'' ~ name ~ '' Music Sync","state_topic":"''
+    ~ topic ~ ''/musicsync","state_on":"1","state_off":"0","payload_on":"1","payload_off":"0","command_topic":"cmnd/'' ~ topic ~ ''/var1","availability_topic":"tele/''
+    ~ topic ~''/LWT","icon":"mdi:music","payload_available":"Online","payload_not_available":"Offline","unique_id":"''
+    ~ macaddr ~ ''_musicsync","device":{"cns":[["mac","'' ~ macaddr ~ ''"]]}}''
+    }}'
+  payload_sensitive:
+    '{{ ''{"name":"'' ~ name ~ '' Music Sensitivity","state_topic":"''
+    ~ topic ~ ''/sensitive","command_topic":"cmnd/'' ~ topic ~ ''/var2","availability_topic":"tele/''
+    ~ topic ~''/LWT","min":1,"max":10,"icon":"mdi:surround-sound","payload_available":"Online","payload_not_available":"Offline","unique_id":"''
+    ~ macaddr ~ ''_sensitive","device":{"cns":[["mac","'' ~ macaddr ~ ''"]]}}''
+    }}'
+  payload_speed: '{{ ''{"name":"'' ~ name ~ '' Music Speed","state_topic":"''
+    ~ topic ~ ''/speed","command_topic":"cmnd/'' ~ topic ~ ''/var3","availability_topic":"tele/''
+    ~ topic ~''/LWT","min":1,"max":100,"icon":"mdi:speedometer-medium","payload_available":"Online","payload_not_available":"Offline","unique_id":"''
+    ~ macaddr ~ ''_speed","device":{"cns":[["mac","'' ~ macaddr ~ ''"]]}}''
+    }}'
+trigger_variables:
+  topic: !input "topic"
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: Online
+action:
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/switch/{{ macaddr }}/musicsync/config
+      retain: true
+      payload: "{{ payload_musicsync }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/number/{{ macaddr }}/sensitive/config
+      retain: true
+      payload: "{{ payload_sensitive }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/number/{{ macaddr }}/speed/config
+      retain: true
+      payload: "{{ payload_speed }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: cmnd/{{ topic }}/l1musicsync
+      payload: ""
