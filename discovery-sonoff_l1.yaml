@@ -27,7 +27,7 @@ variables:
   mac_address: !input "mac_address"
   macaddr: '{{- mac_address.split(":") | join -}}'
   payload_musicsync: '{{ ''{"name":"'' ~ name ~ '' Music Sync","state_topic":"''
-    ~ topic ~ ''/musicsync","state_on":"1","state_off":"0","payload_on":"1","payload_off":"0","command_topic":"cmnd/'' ~ topic ~ ''/var1","availability_topic":"tele/''
+    ~ topic ~ ''/musicsync","state_on":"ON","state_off":"OFF","payload_on":"1","payload_off":"0","command_topic":"cmnd/'' ~ topic ~ ''/var1","availability_topic":"tele/''
     ~ topic ~''/LWT","icon":"mdi:music","payload_available":"Online","payload_not_available":"Offline","unique_id":"''
     ~ macaddr ~ ''_musicsync","device":{"cns":[["mac","'' ~ macaddr ~ ''"]]}}''
     }}'
