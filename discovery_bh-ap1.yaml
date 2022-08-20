@@ -1,0 +1,209 @@
+blueprint:
+  name: 'Tasmota Discovery: BlitzHome Air Purifier BH-AP1'
+  source_url: https://blakadder.com
+  description: | 
+    Set up a BlitzHome BH-AP1 air purifier running Tasmota in Home Assistant. See device template page for additional information: [BlitzHome BH-AP1 Air Purifier](https://templates.blakadder.com/blitzhome_BH-AP1.html).
+    
+    **Requires rules configured in Tasmota!** 
+    
+    <details>
+    
+        rule3 
+        on tuyareceived#dptype1id1 do publish2 %topic%/powerstate %value% endon
+        on tuyareceived#dptype4id3 do publish %topic%/mode %value% endon
+        on tuyareceived#dptype2id2 do publish %topic%/pm25 %value% endon
+        on tuyareceived#dptype2id5 do publish %topic%/filterlife %value% endon
+        on tuyareceived#dptype4id19 do publish %topic%/countdown %value% endon
+        on tuyareceived#dptype4id22 do publish %topic%/airquality %value% endon  
+        on event#sleep do tuyasend4 3,0 endon
+        on event#auto do tuyasend4 3,1 endon
+        on event#manual do tuyasend4 3,2 endon
+        on tuyareceived#dptype4id4 do backlog var1 %value%; add1 1; event sendfanspeed endon
+        on tuyareceived#dptype1id1=0 do publish %topic%/fanspeed off endon
+        on event#sendfanspeed do publish %topic%/fanspeed %var1% endon   
+    </details>
+  
+    Blog post on this configuration on [blakadder.com](https://blakadder.com/).
+
+    <small>Built for Home Assistant 2022.8</small>
+  domain: automation
+  input:
+    tasmota_device:
+      name: "Tasmota Device"
+      description: "Select the Tasmota device"
+      selector:
+        device:
+          integration: tasmota
+          manufacturer: "Tasmota"
+    topic:
+      name: Tasmota MQTT Topic 
+      description: | 
+          Found in the web UI "Information" menu under "MQTT Topic" or with `Topic` command
+      selector: 
+        text:
+
+mode: single
+max_exceeded: silent
+
+variables:
+  device_id: !input tasmota_device
+  topic: !input topic
+  connections: "{{ device_attr(device_id, 'connections') }}"
+  name: "{{ device_attr(device_id, 'name') if device_attr(device_id, 'name_by_user') == None else device_attr(device_id, 'name_by_user') }}"
+  macaddr: >-
+    {%- for i in device_attr(device_id, 'connections') -%}
+      {{ i[1].replace(":", "") }}
+    {% endfor %}
+  payload_fan: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ '",
+        "icon":"hass:air-purifier",
+        "state_topic":"' ~ topic ~ '/powerstate",
+        "state_value_template":"{{ value | int }}",
+        "command_topic":"cmnd/' ~ topic ~ '/TuyaSend1",
+        "command_template":"1,{{ value }}",
+        "payload_on":"1",
+        "payload_off":"0",
+        "percentage_state_topic":"' ~ topic ~ '/fanspeed",
+        "percentage_value_template":"{% if value == \'off\' %}0{% else %}{{ value | int }}{% endif %}","percentage_command_topic":"cmnd/' ~ topic ~'/Backlog",
+        "percentage_command_template":"{% if value == 0 %}tuyasend 1,0{% else %}tuyasend4 4,{{ value - 1 }}{% endif %}",
+        "preset_modes":["Sleep","Auto","Manual"],
+        "preset_mode_state_topic":"' ~ topic ~ '/mode",
+        "preset_mode_value_template":"{%- set val = { \'0\':\'Sleep\', \'1\':\'Auto\', \'2\':\'Manual\' } -%}{{ val[value] | default(\'\', true) }}",
+        "speed_range_max":2,
+        "preset_mode_command_topic":"cmnd/' ~ topic ~ '/event",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_fan",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_pm25: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' PM2.5",
+        "state_topic":"' ~ topic ~ '/pm25",
+        "device_class":"pm25",
+        "unit_of_measurement":"µg/m³",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_fan",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_filterlife: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Filter Life",
+        "state_topic":"' ~ topic ~ '/filterlife",
+        "device_class":"pm25",
+        "icon":"mdi:ticket-percent-outline",
+        "unit_of_measurement":"%",
+        "entity_category":"diagnostic",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_filterlife",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+        }'
+      }}
+  payload_airquality: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Air Quality",
+        "icon":"mdi:thought-bubble",
+        "state_topic":"' ~ topic ~ '/airquality",
+        "value_template":"{%- set val = { \'0\':\'Excellent\', \'1\':\'Good\', \'2\':\'Poor\' } -%}{{ val[value] | default(\'\', true) }}",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_airquality",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }'
+    }}
+  payload_filterreset: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Filter Reset",
+        "icon":"mdi:image-filter-tilt-shift",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend1",
+        "payload_press":"11,1",
+        "entity_category":"config",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_filterreset",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }'
+    }}
+  payload_countdown: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Countdown",
+        "state_topic":"' ~ topic ~ '/countdown",
+        "icon":"mdi:timer-sand",
+        "entity_category":"config",
+        "options":["Off","1h","2h","4h","8h"],
+        "value_template":"{%- set val = { \'0\':\'Off\', \'1\':\'1h\', \'2\':\'2h\', \'3\':\'4h\', \'4\':\'8h\' } -%}{{ val[value] | default(\'Off\', true) }}",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend",
+        "command_template":"{%- set val = { \'Off\':\'0\', \'1h\':\'1\', \'2h\':\'2\', \'4h\':\'3\', \'8h\':\'4\' } -%}19,{{ val[value] | default(\'\', true) }}",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_countdown",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }'
+    }}
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/fan/{{ macaddr }}/airpurifier/config"
+      retain: true
+      payload: "{{ payload_fan }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/pm25/config"
+      retain: true
+      payload: "{{ payload_pm25 }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/filterlife/config"
+      retain: true
+      payload: "{{ payload_filterlife }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/airquality/config"
+      retain: true
+      payload: "{{ payload_airquality }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/button/{{ macaddr }}/filterreset/config"
+      retain: true
+      payload: "{{ payload_filterreset }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/select/{{ macaddr }}/countdown/config"
+      retain: true
+      payload: "{{ payload_countdown }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""
