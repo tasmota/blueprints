@@ -1,6 +1,6 @@
 blueprint:
-  name: 'Tasmota Discovery: BlitzHome Air Purifier BH-AP1'
-  source_url: https://github.com/tasmota/blueprints/blob/main/discovery_bh-ap1.yaml
+  name: "Tasmota Discovery: BlitzHome Air Purifier BH-AP1"
+  source_url: 'https://github.com/tasmota/blueprints/blob/main/discovery_bh-ap1.yaml'
   description: | 
     Set up a BlitzHome BH-AP1 air purifier running Tasmota in Home Assistant. See device template page for additional information: [BlitzHome BH-AP1 Air Purifier](https://templates.blakadder.com/blitzhome_BH-AP1.html).
     
