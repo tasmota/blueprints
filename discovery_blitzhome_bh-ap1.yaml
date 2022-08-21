@@ -1,6 +1,6 @@
 blueprint:
   name: "Tasmota Discovery: BlitzHome Air Purifier BH-AP1"
-  source_url: 'https://github.com/tasmota/blueprints/blob/main/discovery_bh-ap1.yaml'
+  source_url: 'https://github.com/tasmota/blueprints/blob/main/discovery_blitzhome-bh-ap1.yaml'
   description: | 
     Set up a BlitzHome BH-AP1 air purifier running Tasmota in Home Assistant. See device template page for additional information: [BlitzHome BH-AP1 Air Purifier](https://templates.blakadder.com/blitzhome_BH-AP1.html).
     
@@ -19,11 +19,11 @@ blueprint:
         on event#auto do tuyasend4 3,1 endon
         on event#manual do tuyasend4 3,2 endon
         on tuyareceived#dptype4id4 do backlog var1 %value%; add1 1; event sendfanspeed endon
-        on tuyareceived#dptype1id1=0 do publish %topic%/fanspeed off endon
+        on tuyareceived#dptype1id1=0 do publish %topic%/fanspeed 0 endon
         on event#sendfanspeed do publish %topic%/fanspeed %var1% endon   
     </details>
   
-    Blog post on this configuration on [blakadder.com](https://blakadder.com/bh-ap1-in-home-assistant).
+    Blog post explaining this blueprint on [blakadder.com](https://blakadder.com/bh-ap1-in-home-assistant/).
 
     <small>Built for Home Assistant 2022.8</small>
   domain: automation
@@ -158,7 +158,6 @@ variables:
         "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
       }'
     }}
-    
 trigger_variables:
   topic: !input topic
 
