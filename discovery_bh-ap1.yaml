@@ -23,7 +23,7 @@ blueprint:
         on event#sendfanspeed do publish %topic%/fanspeed %var1% endon   
     </details>
   
-    Blog post on this configuration on [blakadder.com](https://blakadder.com/).
+    Blog post on this configuration on [blakadder.com](https://blakadder.com/bh-ap1-in-home-assistant).
 
     <small>Built for Home Assistant 2022.8</small>
   domain: automation
@@ -66,7 +66,8 @@ variables:
         "payload_on":"1",
         "payload_off":"0",
         "percentage_state_topic":"' ~ topic ~ '/fanspeed",
-        "percentage_value_template":"{% if value == \'off\' %}0{% else %}{{ value | int }}{% endif %}","percentage_command_topic":"cmnd/' ~ topic ~'/Backlog",
+        "percentage_value_template":"{{ value | int }}",
+        "percentage_command_topic":"cmnd/' ~ topic ~'/Backlog0",
         "percentage_command_template":"{% if value == 0 %}tuyasend 1,0{% else %}tuyasend4 4,{{ value - 1 }}{% endif %}",
         "preset_modes":["Sleep","Auto","Manual"],
         "preset_mode_state_topic":"' ~ topic ~ '/mode",
@@ -157,6 +158,7 @@ variables:
         "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
       }'
     }}
+    
 trigger_variables:
   topic: !input topic
 
