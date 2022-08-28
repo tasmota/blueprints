@@ -9,12 +9,14 @@ blueprint:
     <details>
     
         template {"NAME":"ProfiCook PC-WKS 1167 G","GPIO":[0,2272,0,2304,0,0,0,0,0,0,0,0,0,0],"FLAG":0,"BASE":54,"CMND":"TuyaMCU 99,1 | TuyaMCU 71,105 | TuyaMCU 72,102 | TempRes 0 | Module 0"}
+         
         rule3 
         on tuyareceived#dptype4id101 do publish %topic%/mode %value% endon
         on tuyareceived#dptype2id102 do publish %topic%/tempset %value% endon
         on tuyareceived#dptype5id104 do publish %topic%/error %value% endon
         on tuyareceived#dptype4id106 do publish %topic%/status %value% endon
         on tuyareceived#dptype2id107 do publish %topic%/timer %value% endon
+        on tuyareceived#dptype4id106==2 do backlog delay 3; publish %topic%/timer 0 endon
     </details>
   
     Blog post explaining this blueprint on [blakadder.com](https://blakadder.com/proficook-kettle-in-home-assistant/).
