@@ -1,0 +1,178 @@
+blueprint:
+  name: "Tasmota Discovery: ProfiCook PC-WKS 1167 G Kettle"
+  source_url: 'https://github.com/tasmota/blueprints/blob/main/discovery_proficook-kettle.yaml'
+  description: | 
+    Set up a ProfiCook PC-WKS 1167 G Tuya Water Kettle running Tasmota in Home Assistant. See device template page for additional information: [ProfiCook PC-WKS 1167 G](https://templates.blakadder.com/blitzhome_BH-AP1.html).
+    
+    **Requires rules configured in Tasmota!** 
+    
+    <details>
+    
+        template {"NAME":"ProfiCook PC-WKS 1167 G","GPIO":[0,2272,0,2304,0,0,0,0,0,0,0,0,0,0],"FLAG":0,"BASE":54,"CMND":"TuyaMCU 99,1 | TuyaMCU 71,105 | TuyaMCU 72,102 | TempRes 0 | Module 0"}
+        rule3 
+        on tuyareceived#dptype4id101 do publish %topic%/mode %value% endon
+        on tuyareceived#dptype2id102 do publish %topic%/tempset %value% endon
+        on tuyareceived#dptype5id104 do publish %topic%/error %value% endon
+        on tuyareceived#dptype4id106 do publish %topic%/status %value% endon
+        on tuyareceived#dptype2id107 do publish %topic%/timer %value% endon
+    </details>
+  
+    Blog post explaining this blueprint on [blakadder.com](https://blakadder.com/proficook-kettle-in-home-assistant/).
+
+    <small>Built for Home Assistant 2022.8+</small>
+  domain: automation
+  input:
+    tasmota_device:
+      name: "Tasmota Device"
+      description: "Select the Tasmota device"
+      selector:
+        device:
+          integration: tasmota
+          manufacturer: "Tasmota"
+    topic:
+      name: Tasmota MQTT Topic 
+      description: | 
+          Found in the web UI "Information" menu under "MQTT Topic" or with `Topic` command
+      selector: 
+        text:
+
+mode: single
+max_exceeded: silent
+
+variables:
+  device_id: !input tasmota_device
+  topic: !input topic
+  connections: "{{ device_attr(device_id, 'connections') }}"
+  name: "{{ device_attr(device_id, 'name') if device_attr(device_id, 'name_by_user') == None else device_attr(device_id, 'name_by_user') }}"
+  macaddr: >-
+    {%- for i in device_attr(device_id, 'connections') -%}
+      {{ i[1].replace(":", "") }}
+    {% endfor %}
+  payload_mode: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Mode",
+        "state_topic":"' ~ topic ~ '/mode",
+        "icon":"hass:kettle-steam",
+        "options":["Standby","Custom °C","Quick Boil","100°C","85°C","60°C","45°C"],
+        "value_template":"{%- set val = { \'0\':\'45°C\', \'1\':\'60°C\', \'2\':\'85°C\', \'3\':\'100°C\', \'4\':\'Quick Boil\', \'5\':\'Custom °C\', \'6\':\'Standby\' } -%}{{ val[value] | default(\'\', true) }}",
+        "command_topic":"cmnd/kettle/backlog0",
+        "command_template":"{%- set val = { \'45°C\':\'0\', \'60°C\':\'1\', \'85°C\':\'2\', \'100°C\':\'3\', \'Quick Boil\':\'4\', \'Custom °C\':\'5\', \'Standby\':\'6\' } -%}{%- if states(expand(device_entities(device_id))| selectattr(\'entity_id\', \'search\', \'_kettlestatus\') | map(attribute=\'entity_id\') | list | join(\',\')) != \'Standby\' -%}tuyasend4 101,6; {% endif %}tuyasend4 101,{{ val[value] }}",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ 'mode",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }'
+    }} 
+  payload_status: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Status",
+        "icon":"hass:kettle",
+        "state_topic":"' ~ topic ~ '/status",
+        "value_template":"{%- set val = { \'1\':\'Removed from base\', \'2\':\'Standby\', \'3\':\'Heating\', \'4\':\'Cooling down\', \'5\':\'Maintain temperature\' } -%}{{ val[value] | default(\'Standby\', true) }}",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "object_id":"' ~ name | slugify ~ '_kettlestatus",
+        "uniq_id":"' ~ macaddr ~ '_status",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_error: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Error",
+        "icon":"hass:kettle-alert",
+        "entity_category":"diagnostic",
+        "state_topic":"' ~ topic ~ '/error",
+        "value_template":"{%- set val = { \'0X00\':\'No Error\', \'0X01\':\'Kettle empty\', \'0X04\':\'Kettle overheated\'} -%}{{ val[value] | default(\'\', true) }}",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_error",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_tempset: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Target Temperature",
+        "icon":"hass:temperature-celsius",
+        "device_class":"temperature",
+        "unit_of_measurement":"°C",
+        "min":35,
+        "max":100,
+        "state_topic":"' ~ topic ~ '/tempset",
+        "command_topic":"cmnd/kettle/tuyasend2",
+        "command_template":"102,{{ value }}",
+        "mode":"box",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_tempset",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_timer: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Time Remaining",
+        "icon":"hass:timer-sand",
+        "device_class":"duration",
+        "unit_of_measurement":"min",
+        "state_topic":"' ~ topic ~ '/timer",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_timer",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/select/{{ macaddr }}/mode/config"
+      retain: true
+      payload: "{{ payload_mode }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/kettlestatus/config"
+      retain: true
+      payload: "{{ payload_status }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/error/config"
+      retain: true
+      payload: "{{ payload_error }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/tempset/config"
+      retain: true
+      payload: "{{ payload_tempset }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/timer/config"
+      retain: true
+      payload: "{{ payload_timer }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""
