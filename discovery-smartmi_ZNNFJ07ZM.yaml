@@ -1,45 +1,113 @@
 blueprint:
   name: 'Tasmota Discovery: SmartMi Fan Heater (ZNNFJ07ZM)'
-  description: | 
+  description: |
     Set up a Tasmotised SmartMi Fan Heater (ZNNFJ07ZM) with an MQTT discovered climate entity and switches for child lock, fan centering and sounds.
     
-    Requires some rules configured in Tasmota and the [MiOT Multiplexer](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/tasmota/blueprints/blob/main/miot-multiplexer) automation running. See device template page for rules:
+    Requires some rules configured in Tasmota and the [MiOT Multiplexer](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/tasmota/blueprints/blob/main/miot-multiplexer.yaml) automation running. See device template page for rules:
     
       - [SmartMi Fan Heater (ZNNFJ07ZM)](https://templates.blakadder.com/smartmi_ZNNFJ07ZM.html)
 
   domain: automation
   input:
-    name:
-      name: Device name
-      description: Name of the device to be used in sensor name creation. 
-      selector: 
-        text:
+    tasmota_device:
+      name: "Tasmota Device"
+      description: "Select the Tasmota device"
+      selector:
+        device:
+          integration: tasmota
+          manufacturer: "Tasmota"
     topic:
       name: Tasmota MQTT Topic 
-      description: "Found in Information tab of the webUI."
+      description: |
+          Found in the web UI "Information" menu under "MQTT Topic" or with `Topic` command
       selector: 
         text:
-    mac_address:
-      name: Tasmota MAC Address
-      description: "Found in Information tab of the webUI."
 
 mode: single
 max_exceeded: silent
 
 variables:
+  device_id: !input tasmota_device
   topic: !input topic
-  name: !input name
-  mac_address: !input mac_address
-  macaddr: '{{- mac_address.split(":") | join -}}'
+  connections: "{{ device_attr(device_id, 'connections') }}"
+  name: "{{ device_attr(device_id, 'name') if device_attr(device_id, 'name_by_user') == None else device_attr(device_id, 'name_by_user') }}"
+  macaddr: >-
+    {%- for i in device_attr(device_id, 'connections') -%}
+      {{ i[1].replace(":", "") }}
+    {% endfor %}
   cr: "\\r"
   payload_heater: >-
-     {{ '{"name":"' ~ name ~ ' Tasmota Heater","modes":["heat","off"],"mode_command_topic":"cmnd/' ~ topic ~ '/serialsend3","mode_command_template":"down set_properties 2 2 {{\'true\' if value == \'heat\' else \'false\'}}'~ cr ~'","mode_state_topic":"' ~ topic ~ '/properties","mode_state_template":"{% if value_json.s2p2 == \'true\' %}heat{% elif value_json.s2p2 == \'false\' %}off{% else %}{% endif %}","fan_modes":["low","high"],"fan_mode_state_topic":"` ~ topic ~ `/properties","fan_mode_state_template":"{% if value_json.s2p3 == \'1\' %}high{% elif value_json.s2p3 == \'2\' %}low{% else %}{% endif %}","fan_mode_command_topic":"cmnd/` ~ topic ~ `/serialsend3","fan_mode_command_template":"down set_properties 2 3 {{\'1\' if value == \'high\' else \'2\'}}'~ cr ~'","swing_modes":["on","off"],"swing_mode_command_topic":"cmnd/` ~ topic ~ `/serialsend3","swing_mode_command_template":"down set_properties 2 4 {{\'1\' if value == \'on\' else \'0\'}}'~ cr ~'","swing_mode_state_template":"{% if value_json.s2p4 == \'1\' %}on{% elif value_json.s2p4 == \'0\' %}off{% else %}{% endif %}","swing_mode_state_topic":"` ~ topic ~ `/properties","availability_topic":"tele/' ~ topic ~'/LWT","icon":"mdi:timer-sand","payload_available":"Online","payload_not_available":"Offline","unique_id":"' ~ macaddr ~ '_heater","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+    {{ '{
+     "name":"' ~ name ~ ' Heater",
+     "modes":["heat","off"],
+     "mode_command_topic":"cmnd/' ~ topic ~ '/sserialsend3",
+     "mode_command_template":"down set_properties 2 2 {{\'true\' if value == \'heat\' else \'false\'}}'~ cr ~'",
+     "mode_state_topic":"' ~ topic ~ '/properties",
+     "mode_state_template":"{% if value_json.s2p2 == \'true\' %}heat{% elif value_json.s2p2 == \'false\' %}off{% else %}{% endif %}",
+     "fan_modes":["low","high"],
+     "fan_mode_state_topic":"' ~ topic ~ '/properties",
+     "fan_mode_state_template":"{% if value_json.s2p3 == \'1\' %}high{% elif value_json.s2p3 == \'2\' %}low{% else %}{% endif %}",
+     "fan_mode_command_topic":"cmnd/' ~ topic ~ '/sserialsend3",
+     "fan_mode_command_template":"down set_properties 2 3 {{\'1\' if value == \'high\' else \'2\'}}'~ cr ~'",
+     "swing_modes":["on","off"],
+     "swing_mode_command_topic":"cmnd/' ~ topic ~ '/sserialsend3",
+     "swing_mode_command_template":"down set_properties 2 4 {{\'1\' if value == \'on\' else \'0\'}}'~ cr ~'",
+     "swing_mode_state_template":"{% if value_json.s2p4 == \'1\' %}on{% elif value_json.s2p4 == \'0\' %}off{% else %}{% endif %}",
+     "swing_mode_state_topic":"' ~ topic ~ '/properties",
+     "availability_topic":"tele/' ~ topic ~'/LWT",
+     "icon":"mdi:timer-sand",
+     "payload_available":"Online",
+     "payload_not_available":"Offline",
+     "unique_id":"' ~ macaddr ~ '_heater",
+     "device":{"cns":[["mac","' ~ macaddr ~ '"]]}
+    }' }}
   payload_fancenter: >-
-     {{ '{"name":"' ~ name ~ ' Center Fan","command_topic":"cmnd/' ~ topic ~ '/serialsend3","payload_on":"down set_properties 8 3 true'~ cr ~'","payload_off":"down set_properties 8 3 false'~ cr ~'","state_topic":"' ~ topic ~ '/properties","state_on":"ON","state_off":"OFF","value_template":"{% if value_json.s8p3 == \'true\' %}ON{% elif value_json.s8p3 == \'false\' %}OFF{% endif %}","icon":"mdi:bullseye","availability_topic":"tele/' ~ topic ~ '/LWT","payload_available":"Online","payload_not_available":"Offline","uniq_id":"' ~ macaddr ~ '_fancenter","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+    {{ '{
+      "name":"' ~ name ~ ' Center Fan",
+      "command_topic":"cmnd/' ~ topic ~ '/sserialsend3",
+      "payload_on":"down set_properties 8 3 true'~ cr ~'",
+      "payload_off":"down set_properties 8 3 false'~ cr ~'",
+      "state_topic":"' ~ topic ~ '/properties",
+      "state_on":"ON","state_off":"OFF",
+      "value_template":"{% if value_json.s8p3 == \'true\' %}ON{% elif value_json.s8p3 == \'false\' %}OFF{% endif %}",
+      "icon":"mdi:bullseye",
+      "availability_topic":"tele/' ~ topic ~ '/LWT",
+      "payload_available":"Online",
+      "payload_not_available":"Offline",
+      "uniq_id":"' ~ macaddr ~ '_fancenter",
+      "device":{"cns":[["mac","' ~ macaddr ~ '"]]}
+    }' }}
   payload_sounds: >-
-     {{ '{"name":"' ~ name ~ ' Sounds","command_topic":"cmnd/' ~ topic ~ '/serialsend3","payload_on":"down set_properties 3 1 true'~ cr ~'","payload_off":"down set_properties 3 1 false'~ cr ~'","state_topic":"' ~ topic ~ '/properties","state_on":"ON","state_off":"OFF","value_template":"{% if value_json.s3p1 == \'true\' %}ON{% elif value_json.s3p1 == \'false\' %}OFF{% endif %}","icon":"mdi:air-horn","availability_topic":"tele/' ~ topic ~ '/LWT","payload_available":"Online","payload_not_available":"Offline","uniq_id":"' ~ macaddr ~ '_sounds","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+    {{ '{
+      "name":"' ~ name ~ ' Sounds",
+      "command_topic":"cmnd/' ~ topic ~ '/sserialsend3",
+      "payload_on":"down set_properties 3 1 true'~ cr ~'",
+      "payload_off":"down set_properties 3 1 false'~ cr ~'",
+      "state_topic":"' ~ topic ~ '/properties",
+      "state_on":"ON","state_off":"OFF",
+      "value_template":"{% if value_json.s3p1 == \'true\' %}ON{% elif value_json.s3p1 == \'false\' %}OFF{% endif %}","icon":"mdi:air-horn",
+      "availability_topic":"tele/' ~ topic ~ '/LWT",
+      "payload_available":"Online",
+      "payload_not_available":"Offline",
+      "uniq_id":"' ~ macaddr ~ '_sounds",
+      "device":{"cns":[["mac","' ~ macaddr ~ '"]]}
+    }' }}
   payload_childlock: >-
-     {{ '{"name":"' ~ name ~ ' Child Lock","command_topic":"cmnd/' ~ topic ~ '/serialsend3","payload_on":"down set_properties 7 1 true'~ cr ~'","payload_off":"down set_properties 7 1 false'~ cr ~'","state_topic":"' ~ topic ~ '/properties","state_on":"ON","state_off":"OFF","value_template":"{% if value_json.s7p1 == \'true\' %}ON{% elif value_json.s7p1 == \'false\' %}OFF{% endif %}","icon":"mdi:baby-face-outline","availability_topic":"tele/' ~ topic ~ '/LWT","payload_available":"Online","payload_not_available":"Offline","uniq_id":"' ~ macaddr ~ '_childlock","device":{"cns":[["mac","' ~ macaddr ~ '"]]}}' }}
+    {{ '{
+      "name":"' ~ name ~ ' Child Lock",
+      "command_topic":"cmnd/' ~ topic ~ '/sserialsend3",
+      "payload_on":"down set_properties 7 1 true'~ cr ~'",
+      "payload_off":"down set_properties 7 1 false'~ cr ~'",
+      "state_topic":"' ~ topic ~ '/properties",
+      "state_on":"ON","state_off":"OFF",
+      "value_template":"{% if value_json.s7p1 == \'true\' %}ON{% elif value_json.s7p1 == \'false\' %}OFF{% endif %}",
+      "icon":"mdi:baby-face-outline",
+      "availability_topic":"tele/' ~ topic ~ '/LWT",
+      "payload_available":"Online",
+      "payload_not_available":"Offline",
+      "uniq_id":"' ~ macaddr ~ '_childlock",
+      "device":{"cns":[["mac","' ~ macaddr ~ '"]]}
+    }' }}
 
 trigger_variables:
   topic: !input topic
