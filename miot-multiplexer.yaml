@@ -1,7 +1,7 @@
 blueprint:
   name: 'Tasmota: Smartmi Multiplexer'
   description: | 
-    Take the MiOT combined properties_changed payload from Tasmota and convert it into a proper JSON array: `{"s<siid>p<piid>":"value",...}`
+    Take the MiOT combined properties_changed payload from MQTT and convert it into a proper JSON array: `{"s<siid>p<piid>":"value",...}`
 
     Requires some rules configured in Tasmota. See your device template page for rules:
     
