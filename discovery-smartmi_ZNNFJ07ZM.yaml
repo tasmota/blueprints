@@ -55,7 +55,7 @@ variables:
      "swing_mode_state_template":"{% if value_json.s2p4 == \'1\' %}on{% elif value_json.s2p4 == \'0\' %}off{% else %}{% endif %}",
      "swing_mode_state_topic":"' ~ topic ~ '/properties",
      "availability_topic":"tele/' ~ topic ~'/LWT",
-     "icon":"mdi:timer-sand",
+     "icon":"hass:radiator",
      "payload_available":"Online",
      "payload_not_available":"Offline",
      "unique_id":"' ~ macaddr ~ '_heater",
