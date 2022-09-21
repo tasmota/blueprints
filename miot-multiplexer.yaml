@@ -15,7 +15,8 @@ blueprint:
       selector: 
         text:
 
-mode: single
+mode: parallel
+max: 10
 max_exceeded: silent
 
 variables:
