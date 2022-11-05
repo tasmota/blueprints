@@ -1,0 +1,285 @@
+blueprint:
+  name: "Tasmota Discovery: ZY-M100 mmWave Presence Sensor"
+  source_url: 'https://github.com/tasmota/blueprints/blob/main/discovery_zy-m100.yaml'
+  description: | 
+    Set up a ZY-M100 mmWave Human Presence sensor running Tasmota in Home Assistant. See device template page for additional information: [ZY-M100](https://templates.blakadder.com/ZY-M100.html).
+    
+    **Requires rules configured in Tasmota!** 
+    
+    <details>
+    
+        Template {"NAME":"ZY-M100","GPIO":[1,1,1,1,1,1,0,0,1,1,1,1,1,0],"FLAG":0,"BASE":54,"CMND":"SO97 1 | TuyaMCU 99,1 | TuyaMCU 75,104 | Rule3 1"}
+
+        rule3
+        on tuyareceived#dptype4id1 do publish %topic%/presence %value% endon
+        on tuyareceived#dptype2id2 do publish %topic%/sensitivity %value% endon
+        on tuyareceived#dptype2id3 do publish %topic%/minrange %value% endon
+        on tuyareceived#dptype2id4 do publish %topic%/maxrange %value% endon
+        on tuyareceived#dptype4id6 do publish %topic%/selfcheck %value% endon
+        on tuyareceived#dptype2id9 do publish %topic%/distance %value% endon
+        on tuyareceived#dptype2id101 do publish %topic%/detection_delay %value% endon
+        on tuyareceived#dptype2id102 do publish %topic%/fading_time %value% endon
+        on tuyareceived#dptype1id106 do publish %topic%/button pressed endon
+    </details>
+  
+    <small>Built for Home Assistant 2022.11+</small>
+  domain: automation
+  input:
+    tasmota_device:
+      name: "Tasmota Device"
+      description: "Select the Tasmota device"
+      selector:
+        device:
+          integration: tasmota
+          manufacturer: "Tasmota"
+    topic:
+      name: Tasmota MQTT Topic 
+      description: | 
+          Found in the web UI "Information" menu under "MQTT Topic" or with `Topic` command
+      selector: 
+        text:
+
+mode: single
+max_exceeded: silent
+
+variables:
+  device_id: !input tasmota_device
+  topic: !input topic
+  connections: "{{ device_attr(device_id, 'connections') }}"
+  name: "{{ device_attr(device_id, 'name') if device_attr(device_id, 'name_by_user') == None else device_attr(device_id, 'name_by_user') }}"
+  macaddr: >-
+    {%- for i in device_attr(device_id, 'connections') -%}
+      {{ i[1].replace(":", "") }}
+    {% endfor %}
+  payload_presence: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Presence",
+        "device_class":"presence",
+        "state_topic":"' ~ topic ~ '/presence",
+        "payload_on":"1",
+        "payload_off":"0",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_presence",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_sensitivity: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Sensitivity",
+        "icon":"hass:radar",
+        "min":"0",
+        "max":"9",
+        "step":"1",
+        "state_topic":"' ~ topic ~ '/sensitivity",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
+        "command_template":"2,{{ value }}",
+        "mode":"slider",
+        "entity_category":"config",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_sensitivity",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_minrange: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Minimum Range",
+        "icon":"hass:magnify-minus-cursor",
+        "min":"0",
+        "max":"10",
+        "step":"0.10",
+        "unit_of_measurement":"m",
+        "state_topic":"' ~ topic ~ '/minrange",
+        "value_template":"{{ value | float * 0.01 }}",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
+        "command_template":"3,{{ value | float * 100 }}",
+        "mode":"slider",
+        "entity_category":"config",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_minrange",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_maxrange: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Maximum Range",
+        "icon":"hass:magnify-plus-cursor",
+        "min":"0",
+        "max":"10",
+        "step":"0.10",
+        "unit_of_measurement":"m",
+        "state_topic":"' ~ topic ~ '/maxrange",
+        "value_template":"{{ value | float * 0.01 }}",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
+        "command_template":"4,{{ value | float * 100 }}",
+        "entity_category":"config",
+        "mode":"slider",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_maxrange",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_selftest: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Self Test",
+        "icon":"hass:test-tube",
+        "state_topic":"' ~ topic ~ '/selfcheck",
+        "value_template":"{%- set val = { \'0\':\'Checking\', \'1\':\'Successful\', \'2\':\'Failure\', \'3\':\'Other\', \'4\':\'Communication Fault\', \'5\':\'Radar Fault\' } -%}{{ val[value] | default(\'Checking\', true) }}",
+        "entity_category":"diagnostic",
+        "enabled_by_default":"true",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_selfcheck",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_distance: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Target Distance",
+        "device_class":"distance",
+        "state_topic":"' ~ topic ~ '/distance",
+        "value_template":"{{ value | float / 100 | default(0, true) }}",
+        "unit_of_measurement":"m",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_distance",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_detectiondelay: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Detection Delay",
+        "icon":"hass:timer-settings",
+        "min":"0",
+        "max":"10",
+        "step":"0.10",
+        "unit_of_measurement":"s",
+        "state_topic":"' ~ topic ~ '/detection_delay",
+        "value_template":"{{ value | float * 0.1 }}",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
+        "command_template":"101,{{ value | float * 10 }}",
+        "mode":"slider",
+        "entity_category":"config",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_detectiondelay",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_fadingtime: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Fading Time",
+        "icon":"hass:account-tie-voice-off",
+        "min":"1",
+        "max":"1500",
+        "step":"1",
+        "unit_of_measurement":"s",
+        "state_topic":"' ~ topic ~ '/fading_time",
+        "value_template":"{{ value }}",
+        "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
+        "command_template":"102,{{ value }}",
+        "mode":"box",
+        "entity_category":"config",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_fadingtime",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+  payload_button: >-
+    {{ 
+      '{
+        "automation_type":"trigger",
+        "topic":"' ~ topic ~ '/button",
+        "payload":"pressed",
+        "type":"button_short_press",
+        "subtype":"reset_button",
+        "uniq_id":"' ~ macaddr ~ '_button",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
+
+trigger_variables:
+  topic: !input topic
+
+trigger:
+  - platform: homeassistant
+    event: start
+  - platform: mqtt
+    topic: '{{ "tele/" ~ topic ~ "/LWT" }}'
+    payload: "Online"
+
+action:
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/binary_sensor/{{ macaddr }}/presence/config"
+      retain: true
+      payload: "{{ payload_presence }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/sensitivity/config"
+      retain: true
+      payload: "{{ payload_sensitivity }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/minrange/config"
+      retain: true
+      payload: "{{ payload_minrange }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/maxrange/config"
+      retain: true
+      payload: "{{ payload_maxrange }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/distance/config"
+      retain: true
+      payload: "{{ payload_distance }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/selftest/config"
+      retain: true
+      payload: "{{ payload_selftest }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/detectiondelay/config"
+      retain: true
+      payload: "{{ payload_detectiondelay }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/number/{{ macaddr }}/fadingtime/config"
+      retain: true
+      payload: "{{ payload_fadingtime }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/device_automation/{{ macaddr }}/button/config"
+      retain: true
+      payload: "{{ payload_button }}"
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 5
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: "cmnd/{{ topic }}/tuyasend8"
+      payload: ""
