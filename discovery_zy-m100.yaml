@@ -4,24 +4,28 @@ blueprint:
   description: | 
     Set up a ZY-M100 mmWave Human Presence sensor running Tasmota in Home Assistant. See device template page for additional information: [ZY-M100](https://templates.blakadder.com/ZY-M100.html).
     
-    **Requires rules configured in Tasmota!** 
+    **Configure Tasmota with template** 
+    ```   
+    Template {"NAME":"ZY-M100","GPIO":[1,1,1,1,1,1,0,0,1,1,1,1,1,0],"FLAG":0,"BASE":54,"CMND":"SO97 1 | TuyaMCU 99,1 | TuyaMCU 75,104 | Rule3 1"}
+    ```
     
-    <details>
+    **Add rule in Tasmota** 
     
-        Template {"NAME":"ZY-M100","GPIO":[1,1,1,1,1,1,0,0,1,1,1,1,1,0],"FLAG":0,"BASE":54,"CMND":"SO97 1 | TuyaMCU 99,1 | TuyaMCU 75,104 | Rule3 1"}
-
-        rule3
-        on tuyareceived#dptype4id1 do publish %topic%/presence %value% endon
-        on tuyareceived#dptype2id2 do publish %topic%/sensitivity %value% endon
-        on tuyareceived#dptype2id3 do publish %topic%/minrange %value% endon
-        on tuyareceived#dptype2id4 do publish %topic%/maxrange %value% endon
-        on tuyareceived#dptype4id6 do publish %topic%/selfcheck %value% endon
-        on tuyareceived#dptype2id9 do publish %topic%/distance %value% endon
-        on tuyareceived#dptype2id101 do publish %topic%/detection_delay %value% endon
-        on tuyareceived#dptype2id102 do publish %topic%/fading_time %value% endon
-        on tuyareceived#dptype1id106 do publish %topic%/button pressed endon
-    </details>
+    ```   
+    rule3
+    on tuyareceived#dptype4id1 do publish %topic%/presence %value% endon
+    on tuyareceived#dptype2id2 do publish %topic%/sensitivity %value% endon
+    on tuyareceived#dptype2id3 do publish %topic%/minrange %value% endon
+    on tuyareceived#dptype2id4 do publish %topic%/maxrange %value% endon
+    on tuyareceived#dptype4id6 do publish %topic%/selfcheck %value% endon
+    on tuyareceived#dptype2id9 do publish %topic%/distance %value% endon
+    on tuyareceived#dptype2id101 do publish %topic%/detection_delay %value% endon
+    on tuyareceived#dptype2id102 do publish %topic%/fading_time %value% endon
+    on tuyareceived#dptype1id106 do publish %topic%/button pressed endon
+    ```   
   
+    Review and teardown of the device on [blakadder.com](https://blakadder.com/zy-m100/).
+
     <small>Built for Home Assistant 2022.11+</small>
   domain: automation
   input:
