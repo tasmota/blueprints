@@ -2,7 +2,7 @@ blueprint:
   name: "Tasmota Discovery: ProfiCook PC-WKS 1167 G Kettle"
   source_url: 'https://github.com/tasmota/blueprints/blob/main/discovery_proficook-kettle.yaml'
   description: | 
-    Set up a ProfiCook PC-WKS 1167 G Tuya Water Kettle running Tasmota in Home Assistant. See device template page for additional information: [ProfiCook PC-WKS 1167 G](https://templates.blakadder.com/blitzhome_BH-AP1.html).
+    Set up a ProfiCook PC-WKS 1167 G Tuya Water Kettle running Tasmota in Home Assistant. See device template page for additional information: [ProfiCook PC-WKS 1167 G](https://templates.blakadder.com/proficook_PC-WKS_1167.html).
     
     **Requires rules configured in Tasmota!** 
     
