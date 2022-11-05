@@ -59,7 +59,7 @@ variables:
     {{ 
       '{
         "name":"' ~ name ~ ' Presence",
-        "device_class":"presence",
+        "device_class":"occupancy",
         "state_topic":"' ~ topic ~ '/presence",
         "payload_on":"1",
         "payload_off":"0",
