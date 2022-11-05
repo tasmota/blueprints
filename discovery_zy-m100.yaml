@@ -19,8 +19,8 @@ blueprint:
     on tuyareceived#dptype2id4 do publish %topic%/maxrange %value% endon
     on tuyareceived#dptype4id6 do publish %topic%/selfcheck %value% endon
     on tuyareceived#dptype2id9 do publish %topic%/distance %value% endon
-    on tuyareceived#dptype2id101 do publish %topic%/detection_delay %value% endon
-    on tuyareceived#dptype2id102 do publish %topic%/fading_time %value% endon
+    on tuyareceived#dptype2id101 do publish %topic%/detection_latency %value% endon
+    on tuyareceived#dptype2id102 do publish %topic%/hold_time %value% endon
     on tuyareceived#dptype1id106 do publish %topic%/button pressed endon
     ```   
   
@@ -73,7 +73,7 @@ variables:
   payload_sensitivity: >-
     {{ 
       '{
-        "name":"' ~ name ~ ' Sensitivity",
+        "name":"' ~ name ~ ' Radar Sensitivity",
         "icon":"hass:radar",
         "min":"0",
         "max":"9",
@@ -165,16 +165,16 @@ variables:
         "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
       }' 
     }}
-  payload_detectiondelay: >-
+  payload_detectionlatency: >-
     {{ 
       '{
-        "name":"' ~ name ~ ' Detection Delay",
+        "name":"' ~ name ~ ' Detection Latency",
         "icon":"hass:timer-settings",
         "min":"0",
         "max":"10",
         "step":"0.10",
         "unit_of_measurement":"s",
-        "state_topic":"' ~ topic ~ '/detection_delay",
+        "state_topic":"' ~ topic ~ '/detection_latency",
         "value_template":"{{ value | float * 0.1 }}",
         "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
         "command_template":"101,{{ value | float * 10 }}",
@@ -183,20 +183,20 @@ variables:
         "avty_t":"tele/' ~ topic ~ '/LWT",
         "pl_avail":"Online",
         "pl_not_avail":"Offline",
-        "uniq_id":"' ~ macaddr ~ '_detectiondelay",
+        "uniq_id":"' ~ macaddr ~ '_detectionlatency",
         "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
       }' 
     }}
-  payload_fadingtime: >-
+  payload_holdtime: >-
     {{ 
       '{
-        "name":"' ~ name ~ ' Fading Time",
+        "name":"' ~ name ~ ' Hold Time",
         "icon":"hass:account-tie-voice-off",
         "min":"1",
         "max":"1500",
         "step":"1",
         "unit_of_measurement":"s",
-        "state_topic":"' ~ topic ~ '/fading_time",
+        "state_topic":"' ~ topic ~ '/hold_time",
         "value_template":"{{ value }}",
         "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
         "command_template":"102,{{ value }}",
@@ -205,7 +205,7 @@ variables:
         "avty_t":"tele/' ~ topic ~ '/LWT",
         "pl_avail":"Online",
         "pl_not_avail":"Offline",
-        "uniq_id":"' ~ macaddr ~ '_fadingtime",
+        "uniq_id":"' ~ macaddr ~ '_holdtime",
         "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
       }' 
     }}
@@ -267,12 +267,12 @@ action:
     data:
       topic: "homeassistant/number/{{ macaddr }}/detectiondelay/config"
       retain: true
-      payload: "{{ payload_detectiondelay }}"
+      payload: "{{ payload_detectionlatency }}"
   - service: mqtt.publish
     data:
       topic: "homeassistant/number/{{ macaddr }}/fadingtime/config"
       retain: true
-      payload: "{{ payload_fadingtime }}"
+      payload: "{{ payload_holdtime }}"
   - service: mqtt.publish
     data:
       topic: "homeassistant/device_automation/{{ macaddr }}/button/config"
