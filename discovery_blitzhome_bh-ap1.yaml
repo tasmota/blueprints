@@ -100,7 +100,6 @@ variables:
       '{
         "name":"' ~ name ~ ' Filter Life",
         "state_topic":"' ~ topic ~ '/filterlife",
-        "device_class":"pm25",
         "icon":"mdi:ticket-percent-outline",
         "unit_of_measurement":"%",
         "entity_category":"diagnostic",
