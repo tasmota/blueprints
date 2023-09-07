@@ -22,6 +22,7 @@ blueprint:
     on tuyareceived#dptype2id101 do publish %topic%/detection_latency %value% endon
     on tuyareceived#dptype2id102 do publish %topic%/hold_time %value% endon
     on tuyareceived#dptype1id106 do publish %topic%/button pressed endon
+    on tuyareceived#dptype2id104 do publish %topic%/illuminance %value% endon
     ```   
   
     Review and teardown of the device on [blakadder.com](https://blakadder.com/zy-m100/).
@@ -165,6 +166,21 @@ variables:
         "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
       }' 
     }}
+  payload_illuminance: >-
+    {{ 
+      '{
+        "name":"' ~ name ~ ' Illuminance",
+        "device_class":"illuminance",
+        "state_topic":"' ~ topic ~ '/illuminance",
+        "value_template":"{{ value | int | default(0, true) }}",
+        "unit_of_measurement":"lux",
+        "avty_t":"tele/' ~ topic ~ '/LWT",
+        "pl_avail":"Online",
+        "pl_not_avail":"Offline",
+        "uniq_id":"' ~ macaddr ~ '_illuminance",
+        "dev":{"cns":[["mac","' ~ macaddr ~ '"]]}
+      }' 
+    }}
   payload_detectionlatency: >-
     {{ 
       '{
@@ -258,6 +274,11 @@ action:
       topic: "homeassistant/sensor/{{ macaddr }}/distance/config"
       retain: true
       payload: "{{ payload_distance }}"
+  - service: mqtt.publish
+    data:
+      topic: "homeassistant/sensor/{{ macaddr }}/illuminance/config"
+      retain: true
+      payload: "{{ payload_illuminance }}"
   - service: mqtt.publish
     data:
       topic: "homeassistant/sensor/{{ macaddr }}/selftest/config"
