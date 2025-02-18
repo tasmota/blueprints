@@ -1,0 +1,103 @@
+blueprint:
+  name: 'Tasmota Discovery: Add camera controls'
+  description: | 
+    This Automation listens to the Tasmota discovery messages for the esp32-webcam devices.
+    Setup Tasmota camera control entities like
+    - Webcam Init
+    - Resolution control
+    - Horizontal and vertical flip of the image
+    - Brightness and contrast control
+    
+    Note: In order to get `cam:1` entry in the discovery message, it is recommended to call wcinit in the device startup. Use a rule/autoexec file as needed.
+
+  domain: automation
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: mqtt
+    topic: tasmota/discovery/+/config
+    value_template: "{{ value_json.cam }}"
+    payload: 1
+
+action:
+  - variables:
+      topic: "{{ trigger.payload_json.t }}"
+      macaddr: "{{ trigger.payload_json.mac }}"
+      common_json: >-
+        {{ ',"availability_topic":"tele/' ~ topic ~
+        '/LWT","payload_available":"Online","payload_not_available":"Offline","device":{"cns":[["mac","'
+        ~ macaddr ~ '"]]}' }}
+      payload_wcinit: >-
+        {{ '{"name":"(Re)Init Webcam","command_topic":"cmnd/' ~ topic ~
+        '/WcInit","uniq_id":"' ~ macaddr ~ '_wcinit","icon":"mdi:camera-flip"' ~
+        common_json ~ '}' }}
+      payload_resolution: >-
+        {{ '{"name":"Resolution","state_topic":"stat/' ~ topic ~
+        '/RESULT","value_template":"{{value_json.WCResolution}}","command_topic":"cmnd/'
+        ~ topic ~ '/WcResolution","min":0,"max":16,"uniq_id":"' ~ macaddr ~
+        '_resolution","icon":"mdi:flip-to-front"' ~ common_json ~ '}' }}
+# Although the resolution mapping is listed in https://tasmota.github.io/docs/Commands/#camera, it does not always map correctly.
+# e.g. value of 1 gives 128x128 image instead of 160x120. All further mappings are shifted by 1.
+# It could be a camera module specific issue. Provide the raw resolution values instead.
+# If this gets fixed, convert this control to a dropdown instead.
+      payload_vflip: >-
+        {{ '{"name":"Flip Vertically","state_topic":"stat/' ~ topic ~
+        '/RESULT","value_template":"{{value_json.WCFlip}}","command_topic":"cmnd/'
+        ~ topic ~ '/WcFlip","uniq_id":"' ~ macaddr ~
+        '_set_vflip","icon":"mdi:flip-vertical"' ~ common_json ~ '}' }}
+      payload_hflip: >-
+        {{ '{"name":"Flip Horizontally","state_topic":"stat/' ~ topic ~
+        '/RESULT","value_template":"{{value_json.WCMirror}}","command_topic":"cmnd/'
+        ~ topic ~ '/WcMirror","uniq_id":"' ~ macaddr ~
+        '_set_hflip","icon":"mdi:flip-horizontal"' ~ common_json ~ '}' }}
+      payload_brightness: >-
+        {{ '{"name":"Brightness","state_topic":"stat/' ~ topic ~
+        '/RESULT","value_template":"{{value_json.WCBrightness}}","command_topic":"cmnd/'
+        ~ topic ~ '/WcBrightness","min":-2,"max":2,"uniq_id":"' ~ macaddr ~
+        '_brightness","icon":"mdi:weather-sunny"' ~ common_json ~ '}' }}
+      payload_contrast: >-
+        {{ '{"name":"Contrast","state_topic":"stat/' ~ topic ~
+        '/RESULT","value_template":"{{value_json.WCContrast}}","command_topic":"cmnd/'
+        ~ topic ~ '/WcContrast","min":-2,"max":2,"uniq_id":"' ~ macaddr ~
+        '_contrast","icon":"mdi:contrast-box"' ~ common_json ~ '}' }}
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/number/{{ macaddr }}/resolution/config
+      payload: "{{ payload_resolution }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/number/{{ macaddr }}/brightness/config
+      payload: "{{ payload_brightness }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/number/{{ macaddr }}/contrast/config
+      payload: "{{ payload_contrast }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/switch/{{ macaddr }}/vflip/config
+      payload: "{{ payload_vflip }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/switch/{{ macaddr }}/hflip/config
+      payload: "{{ payload_hflip }}"
+  - service: mqtt.publish
+    data:
+      topic: homeassistant/button/{{ macaddr }}/wcinit/config
+      payload: "{{ payload_wcinit }}"
+  - service: mqtt.publish
+    data:
+      topic: cmnd/{{ topic }}/backlog
+      payload: >-
+        WcInit; WcStream 1; WCResolution; WCFlip; WCMirror; WcBrightness;
+        WcContrast
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 1
+      milliseconds: 0
+  - service: mqtt.publish
+    data:
+      topic: cmnd/{{ topic }}/backlog
+      payload: WcInit; WcStream 1; WCResolution; WCFlip; WCMirror;
