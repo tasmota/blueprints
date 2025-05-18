@@ -26,42 +26,37 @@ action:
       topic: "{{ trigger.payload_json.t }}"
       macaddr: "{{ trigger.payload_json.mac }}"
       common_json: >-
-        {{ ',"availability_topic":"tele/' ~ topic ~
+        {{ ',"command_topic":"cmnd/' ~ topic ~
+        '/backlog","availability_topic":"tele/' ~ topic ~
         '/LWT","payload_available":"Online","payload_not_available":"Offline","device":{"cns":[["mac","'
         ~ macaddr ~ '"]]}' }}
       payload_wcinit: >-
-        {{ '{"name":"(Re)Init Webcam","command_topic":"cmnd/' ~ topic ~
-        '/WcInit","uniq_id":"' ~ macaddr ~ '_wcinit","icon":"mdi:camera-flip"' ~
+        {{ '{"name":"(Re)Init Webcam","uniq_id":"' ~ macaddr ~ '_wcinit","icon":"mdi:camera-flip","command_template":"wcinit"' ~
         common_json ~ '}' }}
       payload_resolution: >-
         {{ '{"name":"Resolution","state_topic":"stat/' ~ topic ~
-        '/RESULT","value_template":"{{value_json.WCResolution}}","command_topic":"cmnd/'
-        ~ topic ~ '/WcResolution","min":0,"max":16,"uniq_id":"' ~ macaddr ~
-        '_resolution","icon":"mdi:flip-to-front"' ~ common_json ~ '}' }}
+        '/RESULT","value_template":"{{value_json.WC.Resolution}}","command_template":"_WcResolution {{value}}; wc","min":0,"max":16,"uniq_id":"'
+        ~ macaddr ~ '_resolution","icon":"mdi:flip-to-front"' ~ common_json ~ '}' }}
 # Although the resolution mapping is listed in https://tasmota.github.io/docs/Commands/#camera, it does not always map correctly.
 # e.g. value of 1 gives 128x128 image instead of 160x120. All further mappings are shifted by 1.
 # It could be a camera module specific issue. Provide the raw resolution values instead.
 # If this gets fixed, convert this control to a dropdown instead.
       payload_vflip: >-
         {{ '{"name":"Flip Vertically","state_topic":"stat/' ~ topic ~
-        '/RESULT","value_template":"{{value_json.WCFlip}}","command_topic":"cmnd/'
-        ~ topic ~ '/WcFlip","uniq_id":"' ~ macaddr ~
-        '_set_vflip","icon":"mdi:flip-vertical"' ~ common_json ~ '}' }}
+        '/RESULT","value_template":"{{value_json.WC.Flip}}","command_template":"_WcFlip {{value}}; wc","uniq_id":"'
+        ~ macaddr ~ '_set_vflip","icon":"mdi:flip-vertical","payload_on":"1","payload_off":"0"' ~ common_json ~ '}' }}
       payload_hflip: >-
         {{ '{"name":"Flip Horizontally","state_topic":"stat/' ~ topic ~
-        '/RESULT","value_template":"{{value_json.WCMirror}}","command_topic":"cmnd/'
-        ~ topic ~ '/WcMirror","uniq_id":"' ~ macaddr ~
-        '_set_hflip","icon":"mdi:flip-horizontal"' ~ common_json ~ '}' }}
+        '/RESULT","value_template":"{{value_json.WC.Mirror}}","command_template":"_WcMirror {{value}}; wc","uniq_id":"'
+        ~ macaddr ~ '_set_hflip","icon":"mdi:flip-horizontal","payload_on":"1","payload_off":"0"' ~ common_json ~ '}' }}
       payload_brightness: >-
         {{ '{"name":"Brightness","state_topic":"stat/' ~ topic ~
-        '/RESULT","value_template":"{{value_json.WCBrightness}}","command_topic":"cmnd/'
-        ~ topic ~ '/WcBrightness","min":-2,"max":2,"uniq_id":"' ~ macaddr ~
-        '_brightness","icon":"mdi:weather-sunny"' ~ common_json ~ '}' }}
+        '/RESULT","value_template":"{{value_json.WC.Brightness}}","command_template":"_WcBrightness {{value}}; wc","min":-2,"max":2,"uniq_id":"'
+        ~ macaddr ~ '_brightness","icon":"mdi:weather-sunny"' ~ common_json ~ '}' }}
       payload_contrast: >-
         {{ '{"name":"Contrast","state_topic":"stat/' ~ topic ~
-        '/RESULT","value_template":"{{value_json.WCContrast}}","command_topic":"cmnd/'
-        ~ topic ~ '/WcContrast","min":-2,"max":2,"uniq_id":"' ~ macaddr ~
-        '_contrast","icon":"mdi:contrast-box"' ~ common_json ~ '}' }}
+        '/RESULT","value_template":"{{value_json.WC.Contrast}}","command_template":"_WcContrast {{value}}; wc","min":-2,"max":2,"uniq_id":"'
+        ~ macaddr ~ '_contrast","icon":"mdi:contrast-box"' ~ common_json ~ '}' }}
   - service: mqtt.publish
     data:
       topic: homeassistant/number/{{ macaddr }}/resolution/config
@@ -89,9 +84,7 @@ action:
   - service: mqtt.publish
     data:
       topic: cmnd/{{ topic }}/backlog
-      payload: >-
-        WcInit; WcStream 1; WCResolution; WCFlip; WCMirror; WcBrightness;
-        WcContrast
+      payload: _WcInit; _WcStream 1
   - delay:
       hours: 0
       minutes: 0
@@ -100,4 +93,4 @@ action:
   - service: mqtt.publish
     data:
       topic: cmnd/{{ topic }}/backlog
-      payload: WcInit; WcStream 1; WCResolution; WCFlip; WCMirror;
+      payload: _WcInit; _WcStream 1; wc
