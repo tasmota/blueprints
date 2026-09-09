@@ -76,7 +76,7 @@ variables:
         "name":"' ~ name ~ ' Radar Sensitivity",
         "icon":"hass:radar",
         "min":"0",
-        "max":"9",
+        "max":"100",
         "step":"1",
         "state_topic":"' ~ topic ~ '/sensitivity",
         "command_topic":"cmnd/' ~ topic ~ '/tuyasend2",
